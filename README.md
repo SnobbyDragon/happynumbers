@@ -1,2 +1,2 @@
 # happynumbers
-Playing with happy numbers in Lean
+Playing with happy numbers among other things in Lean
