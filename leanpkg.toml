@@ -1,5 +1,5 @@
 [package]
-name = "happy_numbers"
+name = "playing_with_numbers"
 version = "0.1"
 lean_version = "leanprover-community/lean:3.16.4"
 path = "src"

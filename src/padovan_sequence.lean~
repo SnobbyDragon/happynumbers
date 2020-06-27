@@ -1,0 +1,11 @@
+import data.stream.basic
+
+namespace padovan
+
+private def padovan_aux_step : (ℕ × ℕ × ℕ) → (ℕ × ℕ × ℕ) := λ t, ⟨t.2.1, t.2.2, t.1 + t.2.1⟩
+
+private def padovan_aux_stream : stream (ℕ × ℕ × ℕ) := stream.iterate padovan_aux_step ⟨1, 1, 1⟩
+
+def padovan (n : ℕ) : ℕ := (padovan_aux_stream n).1
+
+end padovan

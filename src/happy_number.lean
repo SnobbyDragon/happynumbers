@@ -209,7 +209,6 @@ begin
 end
 
 -- for b=10, multiplying by 10 (adding a zero) won't make a difference
-@[simp]
 lemma ten_happyfunction_eq_times_ten (n : ℕ) : happyfunction 2 10 n = happyfunction 2 10 (10*n) :=
 begin
   cases n,
@@ -240,7 +239,14 @@ begin
   split,
   intros H,
   cases H with j Hj,
-  use j,
+  cases j,
+  use 1,
+  rw happyfunction'_one_eq_happyfunction,
+  unfold happyfunction' at Hj,
+  rw Hj,
+  rw <- ten_happyfunction_eq_times_ten,
+  simp,
+  use j.succ,
   sorry
 end
 
@@ -271,7 +277,8 @@ section mainTheorem
 -- happy function on a 4 or more digit number will result in a smaller number
 lemma ten_happyfunction_lt_four_digits (n : ℕ) (H : (digits 10 n).length ≥ 4) : happyfunction 2 10 n < n :=
 begin
-  have H₁ : happyfunction 2 10 n ≤ 81*(digits 10 n).length,
+  have H₁ : happyfunction 2 10 n ≤ (list.repeat (9^2) (digits 10 n).length).sum,
+  unfold happyfunction,
   sorry
 end
 
