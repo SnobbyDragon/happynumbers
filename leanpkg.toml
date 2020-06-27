@@ -1,0 +1,8 @@
+[package]
+name = "happy_numbers"
+version = "0.1"
+lean_version = "leanprover-community/lean:3.16.4"
+path = "src"
+
+[dependencies]
+mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "985cce7b7a3970a65e3344f2dc5b984a8c154457"}
