@@ -1,5 +1,6 @@
 import tactic
 import data.nat.digits
+import logic.basic
 
 namespace happynumber
 
@@ -47,10 +48,41 @@ begin
   unfold happyfunction',
 end
 
--- commutative composition but not really bc it's the same function
+-- commutative composition but not really bc it's technically the same function
 lemma happyfunction'_comm (p b n i : ℕ) : happyfunction p b (happyfunction' p b n i) = happyfunction' p b (happyfunction p b n) i :=
 begin
-  sorry
+  rw <- happyfunction',
+  induction i with k nk,
+  unfold happyfunction',
+  unfold happyfunction' at *,
+  rw nk,
+end
+
+-- happy = not sad
+lemma happy_not_sad (b n : ℕ) : happy b n ↔ ¬(sad b n) :=
+begin
+  split,
+  intros H S,
+  cases H with k Hk,
+  specialize S k,
+  contradiction,
+  intros S,
+  unfold sad at S,
+  --rw <- not_exists at S,
+  simp at S,
+  cases S with k Sk,
+  use k,
+  exact Sk,
+end
+
+-- every natural number n is either happy or sad, but not both
+lemma happy_xor_sad (b: ℕ) : ∀ (n : ℕ), (happy b n ∨ sad b n) ∧ ¬(happy b n ∧ sad b n) :=
+begin
+  intros n,
+  rw happy_not_sad,
+  split,
+  finish,
+  finish,
 end
 
 -- happy function on 1 equals 1 for any p > 0 and b > 1
@@ -227,16 +259,21 @@ begin
   norm_num,
 end
 
--- for b=10, permuting the digits won't make a difference
-lemma happyfunction_eq_permute_digits_ten (p : ℕ) (n n' : ℕ) (P : (digits 10 n) ~ (digits 10 n')) : happyfunction p 10 n = happyfunction p 10 n' :=
+lemma ten_happyfunction'_eq_times_ten (n : ℕ) : ∀ (i : ℕ), (0 < i) → happyfunction' 2 10 n i = happyfunction' 2 10 (10*n) i :=
 begin
-  sorry
+  intros i i_pos,
+  cases i,
+  exfalso,
+  linarith,
+  unfold happyfunction',
+  rw happyfunction'_comm,
+  rw happyfunction'_comm 2 10 (10*n),
+  rw ten_happyfunction_eq_times_ten,
 end
 
--- n is 10-happy iff n*10 is 10-happy
-lemma ten_happy_times_ten (n : ℕ) : happy 10 n ↔ happy 10 (10*n) :=
+-- if n is 10-happy, then n*10 is 10-happy
+lemma ten_happy_times_ten (n : ℕ) : happy 10 n → happy 10 (10*n) :=
 begin
-  split,
   intros H,
   cases H with j Hj,
   cases j,
@@ -247,7 +284,8 @@ begin
   rw <- ten_happyfunction_eq_times_ten,
   simp,
   use j.succ,
-  sorry
+  rw <- ten_happyfunction'_eq_times_ten n j.succ (nat.succ_pos'),
+  exact Hj,
 end
 
 -- 10^m is always a 10-happy number
@@ -264,6 +302,12 @@ begin
   exact mk,
 end
 
+-- for b=10, permuting the digits won't make a difference
+lemma happyfunction_eq_permute_digits_ten (p : ℕ) (n n' : ℕ) (P : (digits 10 n) ~ (digits 10 n')) : happyfunction p 10 n = happyfunction p 10 n' :=
+begin
+  sorry
+end
+
 -- permuting a 10-happy number's digits will result in another happy number
 lemma ten_happy_permute_ten_happy (b : ℕ) (n : ℕ) (H : happy b n) (n' : ℕ) (P : (digits b n) ~ (digits b n')) : happy b n' :=
 begin
@@ -272,25 +316,63 @@ end
 
 
 -- references "A Set of Eight Numbers" - Arthur Porges
+-- https://oeis.org/A003621/a003621.pdf
 section mainTheorem
 
 -- happy function on a 4 or more digit number will result in a smaller number
 lemma ten_happyfunction_lt_four_digits (n : ℕ) (H : (digits 10 n).length ≥ 4) : happyfunction 2 10 n < n :=
 begin
-  have H₁ : happyfunction 2 10 n ≤ (list.repeat (9^2) (digits 10 n).length).sum,
-  unfold happyfunction,
+  have H₁ : ∀ (d ∈ (digits 10 n)), d ≤ 9,
+  intros d hd,
+  unfold digits at hd,
+  rw digits_aux_def 10 (by linarith) n at hd,
+  cases hd,
+  rw hd,
+  have h : n%10 < 10,
+  exact nat.mod_lt n (by linarith),
+  linarith,
   sorry
+  --have H₁ : (digits 10 n).sum ≤ (list.repeat 9 (digits 10 n).length).sum,
+  --have H₁ : happyfunction 2 10 n ≤ (list.repeat (9^2) (digits 10 n).length).sum,
+  --unfold happyfunction,
 end
 
 def K : set ℕ := {4, 16, 37, 58, 89, 145, 42, 20}
 
-lemma K_closed_under_happyfunction (n : ℕ) (H : n ∈ K) : happyfunction 10 2 n ∈ K :=
+lemma K_closed_under_happyfunction (n : ℕ) (H : n ∈ K) : happyfunction 2 10 n ∈ K :=
+begin
+  iterate 7 {
+  cases H,
+  rw H,
+  unfold happyfunction,
+  norm_num,
+  right,
+  simp,},
+  have H' := set.eq_of_mem_singleton H,
+  rw H',
+  unfold happyfunction,
+  norm_num,
+  left,
+  refl,
+end
+
+lemma K_closed_under_happyfunction' (n : ℕ) (H : n ∈ K) : ∀ (i : ℕ), happyfunction' 2 10 n i ∈ K :=
+begin
+  intros i,
+  induction i with k ik,
+  unfold happyfunction',
+  exact H,
+  unfold happyfunction',
+  exact K_closed_under_happyfunction (happyfunction' 2 10 n k) ik,
+end
+
+-- 10-Sad numbers > 0 always end in the 8 number cycle {4, 16, 37, 58, 89, 145, 42, 20}
+lemma ten_sad_eightnumcycle (n : ℕ) (H : sad 10 n) : ∃ (j : ℕ), ∀ (i : ℕ), (j ≤ i) → (happyfunction' 2 10 n i) ∈ K :=
 begin
   sorry
 end
 
--- 10-Sad numbers > 0 always end in the 8 number cycle {4, 16, 37, 58, 89, 145, 42, 20}
-theorem ten_sad_eightnumcycle (n : ℕ) (H : sad 10 n) : ∃ (j : ℕ), ∀ (i : ℕ), (j ≤ i) → (happyfunction' 2 10 n i) ∈ K :=
+theorem ten_happyfunction_convergence (A : ℕ) : ∃ (n > 0),  ∀ (r ≥ n), (happyfunction' 2 10 A r = 1 ∨ happyfunction' 2 10 A r ∈ K) :=
 begin
   sorry
 end
@@ -305,5 +387,8 @@ end mainTheorem
 
 #print happy
 #reduce happy 10 7
+
+#print sad
+#reduce sad 10 4
 
 end happynumber
