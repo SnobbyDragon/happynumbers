@@ -1,6 +1,7 @@
 import tactic
 import data.nat.digits
 import logic.basic
+import data.list
 
 namespace happynumber
 
@@ -75,13 +76,11 @@ begin
   exact Sk,
 end
 
--- every natural number n is either happy or sad, but not both
-lemma happy_xor_sad (b: ℕ) : ∀ (n : ℕ), (happy b n ∨ sad b n) ∧ ¬(happy b n ∧ sad b n) :=
+-- every natural number n is either happy or sad (but not both)
+lemma happy_or_sad (b: ℕ) : ∀ (n : ℕ), happy b n ∨ sad b n :=
 begin
   intros n,
   rw happy_not_sad,
-  split,
-  finish,
   finish,
 end
 
@@ -230,7 +229,7 @@ begin
   simp,
 end
 
--- 0 is 10-sad
+ -- 0 is 10-sad
 lemma ten_sad_zero : sad 10 0 :=
 begin
   intros i hi,
@@ -319,22 +318,41 @@ end
 -- https://oeis.org/A003621/a003621.pdf
 section mainTheorem
 
--- happy function on a 4 or more digit number will result in a smaller number
-lemma ten_happyfunction_lt_four_digits (n : ℕ) (H : (digits 10 n).length ≥ 4) : happyfunction 2 10 n < n :=
+-- the base 10 digits of a number are all at most 9
+-- Thanks Kevin for digits_lt_base :)
+lemma digits_le_9 (n : ℕ) : ∀ (d ∈ (digits 10 n)), d ≤ 9 :=
 begin
-  have H₁ : ∀ (d ∈ (digits 10 n)), d ≤ 9,
-  intros d hd,
-  unfold digits at hd,
-  rw digits_aux_def 10 (by linarith) n at hd,
-  cases hd,
-  rw hd,
-  have h : n%10 < 10,
-  exact nat.mod_lt n (by linarith),
+  intros d H,
+  have H' := digits_lt_base (by linarith) H,
   linarith,
+end
+
+lemma sum_list_le_len_mul_max (l : list ℕ) (m : ℕ) : ∀ n ∈ l, n ≤ m → l.sum ≤ m*l.length :=
+begin
+  intros n in_l le_m,
+  induction l,
+  refl,
+  rw list.sum_cons,
+  rw list.length_cons,
   sorry
-  --have H₁ : (digits 10 n).sum ≤ (list.repeat 9 (digits 10 n).length).sum,
-  --have H₁ : happyfunction 2 10 n ≤ (list.repeat (9^2) (digits 10 n).length).sum,
-  --unfold happyfunction,
+end
+
+-- happy function on a 4 or more digit number will result in a smaller number
+lemma ten_happyfunction_lt_four_digits (n : ℕ) (R = (digits 10 n).length): (R ≥ 4) → happyfunction 2 10 n < n :=
+begin
+  intros hR,
+  induction hR with k nk,
+  have h₁ : happyfunction 2 10 n ≤ 81*4,
+  unfold happyfunction,
+  have h₂ : ∀ dsq ∈ (list.map (λ (d : ℕ), d ^ 2) (digits 10 n)), dsq ≤ 81,
+  intros dsq dsqh,
+  simp at dsqh,
+  cases dsqh with d' d'sqh,
+  cases d'sqh with dh sqh,
+  have h₃ := digits_le_9 n d' dh,
+  rw <- sqh,
+  exact nat.pow_le_pow_of_le_left h₃ 2,
+  sorry
 end
 
 def K : set ℕ := {4, 16, 37, 58, 89, 145, 42, 20}
@@ -374,6 +392,11 @@ end
 
 theorem ten_happyfunction_convergence (A : ℕ) : ∃ (n > 0),  ∀ (r ≥ n), (happyfunction' 2 10 A r = 1 ∨ happyfunction' 2 10 A r ∈ K) :=
 begin
+  have H := happy_or_sad 10 A,
+  cases H,
+  cases H with n Hn,
+  use n,
+  split,
   sorry
 end
 
