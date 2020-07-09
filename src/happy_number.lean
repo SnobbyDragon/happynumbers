@@ -320,20 +320,34 @@ section mainTheorem
 
 -- the base 10 digits of a number are all at most 9
 -- Thanks Kevin for digits_lt_base :)
-lemma digits_le_9 (n : ℕ) : ∀ (d ∈ (digits 10 n)), d ≤ 9 :=
+lemma ten_digits_le_9 (n : ℕ) : ∀ (d ∈ (digits 10 n)), d ≤ 9 :=
 begin
   intros d H,
   have H' := digits_lt_base (by linarith) H,
   linarith,
 end
 
-lemma sum_list_le_len_mul_max (l : list ℕ) (m : ℕ) : ∀ n ∈ l, n ≤ m → l.sum ≤ m*l.length :=
+lemma sum_list_le_len_mul_ge (l : list ℕ) (m : ℕ) : (∀ n ∈ l, n ≤ m) → l.sum ≤ m*l.length :=
 begin
-  intros n in_l le_m,
+  intros h,
   induction l,
   refl,
-  rw list.sum_cons,
-  rw list.length_cons,
+  rw [list.sum_cons, list.length_cons, mul_add, mul_one, add_comm],
+  apply add_le_add,
+  apply l_ih,
+  intros n in_t_tl,
+  specialize h n,
+  apply h,
+  right,
+  exact in_t_tl,
+  exact h l_hd (list.mem_cons_self l_hd l_tl),
+end
+
+lemma ten_digits_len_ge (n : ℕ) : n > 0 → n ≥ 10 ^ ((digits 10 n).length - 1) :=
+begin
+  intros npos,
+  induction n with k nk,
+  linarith,
   sorry
 end
 
@@ -352,6 +366,11 @@ begin
   have h₃ := digits_le_9 n d' dh,
   rw <- sqh,
   exact nat.pow_le_pow_of_le_left h₃ 2,
+  have h₃ := sum_list_le_len_mul_ge (list.map (λ (d : ℕ), d ^ 2) (digits 10 n)) 81 h₂,
+  rw list.length_map (λ (d : ℕ), d ^ 2) (digits 10 n) at h₃,
+  rw H,
+  exact h₃,
+  have h₂ : 81 * 4 < n,
   sorry
 end
 
