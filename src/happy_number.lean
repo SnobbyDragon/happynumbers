@@ -343,7 +343,57 @@ begin
   exact h l_hd (list.mem_cons_self l_hd l_tl),
 end
 
-lemma ten_digits_len_ge (n : ℕ) : n > 0 → n ≥ 10 ^ ((digits 10 n).length - 1) :=
+lemma digits_nonzero_len {b n : ℕ} : n > 0 → (digits b n).length > 0 :=
+begin
+  intros npos,
+  cases b,
+  unfold digits,
+  cases n,
+  { linarith,
+  },
+  { unfold digits_aux_0,
+    rw list.length,
+    linarith,
+  },
+  cases b,
+  { unfold digits,
+    unfold digits_aux_1,
+    rw list.length_repeat,
+    exact npos,
+  },
+  { unfold digits,
+    cases n,
+    { linarith,
+    },
+    { unfold digits_aux,
+      rw list.length_cons,
+      linarith,
+    },
+  },
+end
+
+lemma digits_ge_base_pow_len {b n : ℕ} : n > 0 → b > 0 → n ≥ b ^ ((digits b n).length - 1) :=
+begin
+  intros npos bpos,
+  have h₁ : (digits b n).length - 1 ≥ 0,
+  linarith [digits_nonzero_len npos],
+  exact n,
+  have h₂ : b ^ ((digits b n).length - 1) ≥ 1,
+  induction (digits b n).length - 1 with k nk,
+  { rw nat.pow_zero b,
+    linarith,
+  },
+  { rw nat.pow_succ,
+    nlinarith,
+  },
+  cases n,
+  { linarith,
+  },
+  { 
+  },
+end
+
+lemma ten_digits_ge_base_pow_len (n : ℕ) : n > 0 → n ≥ 10 ^ ((digits 10 n).length - 1) :=
 begin
   intros npos,
   induction n with k nk,
@@ -363,7 +413,7 @@ begin
   simp at dsqh,
   cases dsqh with d' d'sqh,
   cases d'sqh with dh sqh,
-  have h₃ := digits_le_9 n d' dh,
+  have h₃ := ten_digits_le_9 n d' dh,
   rw <- sqh,
   exact nat.pow_le_pow_of_le_left h₃ 2,
   have h₃ := sum_list_le_len_mul_ge (list.map (λ (d : ℕ), d ^ 2) (digits 10 n)) 81 h₂,
