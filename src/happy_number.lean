@@ -348,7 +348,8 @@ begin
   split,
   { intros npos,
    cases b,
-   { unfold digits,
+   { -- base 0
+     unfold digits,
      cases n,
      { linarith, },
      { unfold digits_aux_0,
@@ -357,12 +358,14 @@ begin
      },
    },
    { cases b,
-     { unfold digits,
+     { -- base 1
+       unfold digits,
        unfold digits_aux_1,
        rw list.length_repeat,
        exact npos,
      },
-     { unfold digits,
+     { -- base >= 2
+       unfold digits,
        cases n,
        { linarith, },
        { unfold digits_aux,
@@ -374,7 +377,8 @@ begin
   },
   { intros lenpos,
     cases b,
-    { unfold digits at lenpos,
+    { -- base 0
+      unfold digits at lenpos,
       cases n,
       { unfold digits_aux_0 at lenpos,
         rw list.length at lenpos,
@@ -383,11 +387,13 @@ begin
       { exact nat.succ_pos n, },
     },
     { cases b,
-      unfold digits at lenpos,
-      { unfold digits_aux_1 at lenpos,
+      { -- base 1
+        unfold digits at lenpos,
+        unfold digits_aux_1 at lenpos,
         rw list.length_repeat at lenpos,
         exact lenpos, },
-      { cases n,
+      { -- base >= 2
+        cases n,
         { unfold digits at lenpos,
           unfold digits_aux at lenpos,
           rw list.length at lenpos,
@@ -398,23 +404,39 @@ begin
   },
 end
 
-lemma le_iff_digits_len_le {b n m : ℕ} : (digits (b + 2) n).length ≤ (digits (b + 2) m).length ↔ n ≤ m :=
+lemma le_digits_len_le {b n m : ℕ} :  n ≤ m → (digits b n).length ≤ (digits b m).length :=
 begin
-  split,
-  { intros h,
-    unfold digits at h,
+  intros h,
+  cases b,
+  { -- base 0
+    unfold digits,
     cases n,
-    { linarith, },
-    { induction m with k mk,
-      { unfold digits_aux at h,
-        rw list.length_cons at h,
-        rw list.length at h,
-        linarith, },
-      { sorry
+    { unfold digits_aux_0,
+      rw list.length,
+      linarith,
+    },
+    { cases m,
+      { linarith [nat.succ_pos n] },
+      { unfold digits_aux_0, 
+        repeat {rw list.length},
       },
     },
   },
-  { sorry },
+  { cases b,
+    { -- base 1
+      unfold digits,
+      unfold digits_aux_1,
+      repeat { rw list.length_repeat },
+      exact h,
+    },
+    { -- base >= 2
+      induction b with k bk,
+      { unfold digits, 
+        sorry
+      },
+      { sorry },
+    },
+  },
 end
 
 lemma digits_ge_base_pow_len {b m : ℕ} : m > 0 → m ≥ (b + 2) ^ ((digits (b + 2) m).length - 1) :=
@@ -422,6 +444,7 @@ begin
   intros mpos,
   induction b with k bk,
   unfold digits,
+  sorry
 end
 
 lemma ten_digits_ge_base_pow_len (n : ℕ) : n > 0 → n ≥ 10 ^ ((digits 10 n).length - 1) :=
