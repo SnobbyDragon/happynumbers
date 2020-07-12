@@ -347,7 +347,7 @@ begin
   exact h l_hd (list.mem_cons_self l_hd l_tl),
 end
 
-lemma nonzero_iff_digits_len_nonzero {b n : ℕ} : n > 0 ↔ (digits b n).length > 0 :=
+lemma nonzero_iff_digits_len_nonzero {b n : ℕ} : 0 < n ↔ 0 < (digits b n).length :=
 begin
   split,
   { intros npos,
@@ -483,19 +483,11 @@ begin
   },
 end
 
-lemma div_ge_of_ge (a b : ℕ) : 0 < a → 0 < b → b ≤ a → 0 < a/b :=
+lemma div_ge_of_ge (a b : ℕ) : 0 < a → 0 < b → b ≤ a → 1 ≤ a/b :=
 begin
   intros ha hb h,
-  rw le_iff_exists_add at h,
-  cases h with c hc,
-  induction c with k ck generalizing a,
-  { rw nat.add_zero at hc,
-    rw [hc, nat.div_self hb],
-    linarith,
-  },
-  { rw hc,
-    sorry
-  },
+  rw nat.div_eq_sub_div hb h,
+  exact nat.le_add_left 1 ((a-b)/b),
 end
 
 lemma digits_ge_base_pow_len {b m : ℕ} : m > 0 → m ≥ (b + 2) ^ ((digits (b + 2) m).length - 1) :=
@@ -516,7 +508,23 @@ begin
       linarith,
     },
     { have geb : (n.succ / (b + 2)) ≥ 1,
-      sorry
+      exact div_ge_of_ge n.succ (b+2) npos (by linarith) h,
+      specialize IH geb,
+      rw nat.succ_sub_one (digits_aux (b + 2) _ (n.succ / (b + 2))).length,
+      have IH' := nat.mul_le_mul_left (b+2) IH,
+      rw nat.mul_comm at IH',
+      rw <- nat.pow_succ at IH',
+      rw nat.succ_eq_add_one at IH',
+      rw nat.add_comm ((digits_aux (b + 2) _ (n.succ / (b + 2))).length - 1) at IH',
+      rw <- nat.add_sub_assoc at IH',
+      rw nat.add_sub_cancel_left 1 (digits_aux (b + 2) _ (n.succ / (b + 2))).length at IH',
+      have IH'' := nat.div_mul_le_self n.succ (b+2),
+      rw mul_comm at IH',
+      exact le_trans IH' IH'',
+      change 0 < (digits_aux (b + 2) _ (n.succ / (b + 2))).length,
+      rw <- digits,
+      rw <- nonzero_iff_digits_len_nonzero,
+      exact geb,
     },
   },
 end
