@@ -159,17 +159,19 @@ begin
   rw le_iff_exists_add at hi,
   cases hi with c hc,
   induction c with k ck generalizing i,
-  simp at hc,
-  rw hc,
-  exact H,
-  rw nat.add_succ at hc,
-  rw hc,
-  unfold happyfunction',
-  specialize ck (j+k),
-  simp at ck,
-  rw ck,
-  --unfold happyfunction,
-  simp,
+  { simp at hc,
+    rw hc,
+    exact H,
+  },
+  { rw nat.add_succ at hc,
+    rw hc,
+    unfold happyfunction',
+    specialize ck (j+k),
+    simp at ck,
+    rw ck,
+    --unfold happyfunction,
+    simp,
+  },
 end
 
 -- for base b, after reaching 1, will stay 1
@@ -179,17 +181,19 @@ begin
   rw le_iff_exists_add at hi,
   cases hi with c hc,
   induction c with k ck generalizing i,
-  simp at hc,
-  rw hc,
-  exact H,
-  rw nat.add_succ at hc,
-  rw hc,
-  unfold happyfunction',
-  specialize ck (j+k),
-  simp at ck,
-  rw ck,
-  --exact happyfunction_one' 2 b,
-  simp,
+   { simp at hc,
+     rw hc,
+     exact H,
+  }, 
+  { rw nat.add_succ at hc,
+    rw hc,
+    unfold happyfunction',
+    specialize ck (j+k),
+    simp at ck,
+    rw ck,
+    --exact happyfunction_one' 2 b,
+    simp,
+  },
 end
 
 -- 1 is 10-happy
@@ -404,6 +408,48 @@ begin
   },
 end
 
+lemma digits_no_leading_zero {b n : ℕ} : (∀ (h : (digits b n) ≠ list.nil), (digits b n).last h ≠ 0) :=
+begin
+  intros h lh,
+  sorry
+end
+
+lemma digits_len_le_digits_len_succ {b n : ℕ} : (digits b n).length ≤ (digits b (n + 1)).length :=
+begin
+  cases b,
+  { -- base 0
+    unfold digits,
+    cases n,
+    { unfold digits_aux_0,
+      repeat { rw list.length },
+      linarith,
+    },
+    { unfold digits_aux_0,
+      repeat { rw list.length },
+    },
+  },
+  { cases b,
+    { -- base 1
+      unfold digits,
+      unfold digits_aux_1,
+      repeat {rw list.length_repeat },
+      linarith,
+    },
+    { -- base >= 2
+      apply nat.strong_induction_on n,
+      clear n,
+      intros n IH,
+      cases n,
+      { rw digits_zero,
+        rw list.length,
+        linarith,
+      },
+      { sorry
+      },
+    },
+  },
+end
+
 lemma le_digits_len_le {b n m : ℕ} :  n ≤ m → (digits b n).length ≤ (digits b m).length :=
 begin
   intros h,
@@ -430,21 +476,49 @@ begin
       exact h,
     },
     { -- base >= 2
-      induction b with k bk,
-      { unfold digits, 
-        sorry
-      },
-      { sorry },
+      rw le_iff_exists_add at h,
+      cases h with c hc,
+      sorry
     },
+  },
+end
+
+lemma div_ge_of_ge (a b : ℕ) : 0 < a → 0 < b → b ≤ a → 0 < a/b :=
+begin
+  intros ha hb h,
+  rw le_iff_exists_add at h,
+  cases h with c hc,
+  induction c with k ck generalizing a,
+  { rw nat.add_zero at hc,
+    rw [hc, nat.div_self hb],
+    linarith,
+  },
+  { rw hc,
+    sorry
   },
 end
 
 lemma digits_ge_base_pow_len {b m : ℕ} : m > 0 → m ≥ (b + 2) ^ ((digits (b + 2) m).length - 1) :=
 begin
-  intros mpos,
-  induction b with k bk,
-  unfold digits,
-  sorry
+  apply nat.strong_induction_on m,
+  clear m,
+  intros n IH npos,
+  unfold digits at IH ⊢,
+  cases n,
+  { linarith, },
+  { rw digits_aux_def (b+2) (by linarith) (n.succ),
+    rw list.length_cons,
+    specialize IH ((n.succ)/(b+2)) (nat.div_lt_self' n b),
+    cases nat.lt_or_ge n.succ (b+2),
+    { have ltb := nat.div_eq_of_lt h,
+      rw [ltb, digits_aux_zero, list.length],
+      simp,
+      linarith,
+    },
+    { have geb : (n.succ / (b + 2)) ≥ 1,
+      sorry
+    },
+  },
 end
 
 lemma ten_digits_ge_base_pow_len (n : ℕ) : n > 0 → n ≥ 10 ^ ((digits 10 n).length - 1) :=
