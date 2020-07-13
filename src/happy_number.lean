@@ -323,7 +323,7 @@ end
 section mainTheorem
 
 -- the base 10 digits of a number are all at most 9
--- Thanks Kevin for digits_lt_base :)
+-- Thanks Kevin Buzzard for digits_lt_base :)
 lemma ten_digits_le_9 (n : ℕ) : ∀ (d ∈ (digits 10 n)), d ≤ 9 :=
 begin
   intros d H,
@@ -526,6 +526,73 @@ end
 lemma ten_digits_ge_base_pow_len (n : ℕ) : n > 0 → n ≥ 10 ^ ((digits 10 n).length - 1) :=
 begin
   exact digits_ge_base_pow_len,
+end
+
+-- Thanks Grayson Burton for this handy lemma!!
+lemma ex_pred_of_s : ∀ n > 0, ∃ m : ℕ, m.succ = n
+| 0       h := absurd h dec_trivial
+| (n + 1) _ := ⟨n, rfl⟩
+
+-- this was used for the disaster lmao
+lemma lt_add_lt_mul (a b c : ℕ) (hb : 1 < b) (hc : 0 < c) : a < c → a + c < b*c :=
+begin
+  intros h,
+  have hbc : 2*c ≤ b*c,
+  induction hb with k hbk,
+  { rw nat.succ_eq_add_one, },
+  { apply le_trans hb_ih,
+    rw nat.succ_mul,
+    linarith,
+  },
+  have hac : a + c < 2*c,
+  linarith,
+  linarith,
+end
+
+lemma digits_lt_base_pow_len {b m : ℕ} : m > 0 → m < (b + 2) ^ ((digits (b + 2) m).length) :=
+begin
+  apply nat.strong_induction_on m,
+  clear m,
+  intros n IH npos,
+  unfold digits at IH ⊢,
+  cases n,
+  { linarith, },
+  { rw [digits_aux_def (b+2) (by linarith) (n.succ), list.length_cons],
+    specialize IH ((n.succ)/(b+2)) (nat.div_lt_self' n b),
+    cases nat.lt_or_ge n.succ (b+2),
+    { rw [nat.pow_add (b+2) (digits_aux (b + 2) _ (n.succ / (b + 2))).length 1, nat.div_eq_of_lt h, <- digits, digits_zero, list.length, nat.pow_zero, nat.one_mul, nat.pow_one],
+      exact h,
+    },
+    { have divpos := div_ge_of_ge n.succ (b+2) npos (by linarith) h,
+      specialize IH divpos,
+      have bpos : b + 2 > 0 := by linarith,
+      have IH' := nat.mul_lt_mul_of_pos_left IH bpos,
+      have IH'' := nat.add_lt_add_left IH' (n.succ % (b + 2)),
+      rw nat.mod_add_div n.succ (b+2) at IH'',
+      sorry
+
+      /- DISASTER
+      cases ex_pred_of_s (n.succ / (b+2)) (divpos) with m exm,
+      rw <- exm,
+      unfold digits_aux,
+      rw list.length_cons,
+      have ltb := nat.mod_lt n.succ bpos,
+      repeat { rw nat.pow_add },
+      rw nat.pow_one,
+      rw nat.mul_comm,
+      rw <- nat.mul_assoc,
+      rw nat.mul_comm,
+      rw <- nat.mul_assoc,
+      have powpos : 0 < (b + 2) * (b + 2) ^ (digits_aux (b + 2) _ (n.succ / (b + 2))).length,
+      apply nat.mul_pos,
+      exact bpos,
+      exact nat.pos_pow_of_pos _ bpos,
+      linarith,
+      have hlt : n.succ % (b + 2) + (b + 2) * (b + 2) ^ (digits_aux (b + 2) _ (n.succ / (b + 2))).length < (b + 2) * (b + 2) * (b + 2) ^ (digits_aux (b + 2) _ ((m + 1) / (b + 2))).length := lt_add_lt_mul (n.succ / (b+2)) (b+2) ((b + 2) * (b + 2) ^ (digits_aux (b + 2) _ ((m + 1) / (b + 2))).length) (by linarith) powpos,
+    -/
+    },
+    exact npos,
+  },
 end
 
 -- happy function on a 4 or more digit number will result in a smaller number
