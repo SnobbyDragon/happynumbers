@@ -5,18 +5,6 @@ import data.list
 
 namespace happynumber
 
--- no longer using B and ℕ+
-/-
-def B := set.Ioi (1 : ℕ)
-#check B
-#reduce 5 ∈ B
-
-#reduce nat.has_pow
-def pow (n : ℕ) (p : ℕ+) : ℕ := nat.pow n p
-instance : has_pow ℕ ℕ+ := ⟨pow⟩
--/
-
-
 section definitions
 
 -- Perfect digital invariant (a.k.a. happy function)
@@ -347,74 +335,32 @@ begin
   exact h l_hd (list.mem_cons_self l_hd l_tl),
 end
 
-lemma nonzero_iff_digits_len_nonzero {b n : ℕ} : 0 < n ↔ 0 < (digits b n).length :=
+lemma ne_zero_iff_digits_ne_nil (b n : ℕ) : n ≠ 0 ↔ digits b n ≠ list.nil :=
 begin
   split,
-  { intros npos,
-   cases b,
-   { -- base 0
-     unfold digits,
-     cases n,
-     { linarith, },
-     { unfold digits_aux_0,
-       rw list.length,
-       linarith,
-     },
-   },
-   { cases b,
-     { -- base 1
-       unfold digits,
-       unfold digits_aux_1,
-       rw list.length_repeat,
-       exact npos,
-     },
-     { -- base >= 2
-       unfold digits,
-       cases n,
-       { linarith, },
-       { unfold digits_aux,
-         rw list.length_cons,
-         linarith,
-       },
-     },
-   },
+  { intros hn hd,
+    cases n,
+    { contradiction },
+    { have h := of_digits_digits b n.succ,
+      rw hd at h,
+      contradiction,
+    },
   },
-  { intros lenpos,
-    cases b,
-    { -- base 0
-      unfold digits at lenpos,
-      cases n,
-      { unfold digits_aux_0 at lenpos,
-        rw list.length at lenpos,
-        exact lenpos,
-      },
-      { exact nat.succ_pos n, },
-    },
-    { cases b,
-      { -- base 1
-        unfold digits at lenpos,
-        unfold digits_aux_1 at lenpos,
-        rw list.length_repeat at lenpos,
-        exact lenpos, },
-      { -- base >= 2
-        cases n,
-        { unfold digits at lenpos,
-          unfold digits_aux at lenpos,
-          rw list.length at lenpos,
-          exact lenpos, },
-        { exact nat.succ_pos n},
-      },
-    },
+  { contrapose!,
+    intros h,
+    rw h,
+    exact digits_zero b,
   },
 end
 
-lemma digits_no_leading_zero {b n : ℕ} : (∀ (h : (digits b n) ≠ list.nil), (digits b n).last h ≠ 0) :=
+lemma ne_zero_iff_digits_len_ne_zero (b n : ℕ) : n ≠ 0 ↔ (digits b n).length ≠ 0 :=
 begin
-  intros h lh,
-  sorry
+  rw [ne_zero_iff_digits_ne_nil b n, not_iff_not],
+  symmetry',
+  exact list.length_eq_zero,
 end
 
-lemma digits_len_le_digits_len_succ {b n : ℕ} : (digits b n).length ≤ (digits b (n + 1)).length :=
+lemma digits_len_le_digits_len_succ (b n : ℕ) : (digits b n).length ≤ (digits b (n + 1)).length :=
 begin
   cases b,
   { -- base 0
@@ -444,48 +390,32 @@ begin
         rw list.length,
         linarith,
       },
-      { unfold digits,
-        unfold digits_aux,
-        repeat { rw list.length_cons },
-        cases nat.lt_or_ge (n+1) (b+2),
-        {sorry},
-        {sorry},
+      { have hdvd : (b.succ.succ) ∣ (n.succ+1) ∨ ¬((b.succ.succ) ∣ (n.succ+1)) := classical.or_not,
+        cases hdvd,
+        { have h := nat.succ_div_of_dvd hdvd,
+          repeat { rw digits_add_two_add_one },
+          rw h,
+          repeat { rw list.length_cons },
+          rw nat.succ_le_succ_iff,
+          apply IH,
+          exact nat.div_lt_self (by linarith) (by linarith),
+        },
+        { have h:= nat.succ_div_of_not_dvd hdvd,
+          repeat {rw digits_add_two_add_one },
+          rw h,
+          refl,
+        },
       },
     },
   },
 end
 
-lemma le_digits_len_le {b n m : ℕ} :  n ≤ m → (digits b n).length ≤ (digits b m).length :=
+lemma le_digits_len_le (b n m : ℕ) : n ≤ m → (digits b n).length ≤ (digits b m).length :=
 begin
   intros h,
-  cases b,
-  { -- base 0
-    unfold digits,
-    cases n,
-    { unfold digits_aux_0,
-      rw list.length,
-      linarith,
-    },
-    { cases m,
-      { linarith [nat.succ_pos n] },
-      { unfold digits_aux_0, 
-        repeat {rw list.length},
-      },
-    },
-  },
-  { cases b,
-    { -- base 1
-      unfold digits,
-      unfold digits_aux_1,
-      repeat { rw list.length_repeat },
-      exact h,
-    },
-    { -- base >= 2
-      rw le_iff_exists_add at h,
-      cases h with c hc,
-      sorry
-    },
-  },
+  induction h with k nk IH,
+  { refl },
+  { exact nat.le_trans IH (digits_len_le_digits_len_succ b k) },
 end
 
 lemma div_ge_of_ge (a b : ℕ) : 0 < a → 0 < b → b ≤ a → 1 ≤ a/b :=
@@ -495,25 +425,25 @@ begin
   exact nat.le_add_left 1 ((a-b)/b),
 end
 
-lemma digits_ge_base_pow_len {b m : ℕ} : m > 0 → m ≥ (b + 2) ^ ((digits (b + 2) m).length - 1) :=
+lemma digits_ge_base_pow_len (b m : ℕ) : m ≠ 0 → m ≥ (b + 2) ^ ((digits (b + 2) m).length - 1) :=
 begin
   apply nat.strong_induction_on m,
   clear m,
   intros n IH npos,
   unfold digits at IH ⊢,
   cases n,
-  { linarith, },
+  { contradiction, },
   { rw [digits_aux_def (b+2) (by linarith) (n.succ), list.length_cons],
     specialize IH ((n.succ)/(b+2)) (nat.div_lt_self' n b),
     cases nat.lt_or_ge n.succ (b+2),
     { have ltb := nat.div_eq_of_lt h,
       rw [ltb, digits_aux_zero, list.length],
       simp,
-      linarith,
+      exact nat.succ_pos n,
     },
     { have geb : (n.succ / (b + 2)) ≥ 1,
-      exact div_ge_of_ge n.succ (b+2) npos (by linarith) h,
-      specialize IH geb,
+      exact div_ge_of_ge n.succ (b+2) (by linarith [npos]) (by linarith) h,
+      specialize IH (by linarith [geb]),
       rw nat.succ_sub_one (digits_aux (b + 2) _ (n.succ / (b + 2))).length,
       have IH' := nat.mul_le_mul_left (b+2) IH,
       rw [nat.mul_comm, <- nat.pow_succ, nat.succ_eq_add_one, nat.add_comm ((digits_aux (b + 2) _ (n.succ / (b + 2))).length - 1), <- nat.add_sub_assoc, nat.add_sub_cancel_left 1 (digits_aux (b + 2) _ (n.succ / (b + 2))).length] at IH',
@@ -521,110 +451,73 @@ begin
       rw mul_comm at IH',
       exact le_trans IH' IH'',
       change 0 < (digits_aux (b + 2) _ (n.succ / (b + 2))).length,
-      rw [<- digits, <- nonzero_iff_digits_len_nonzero],
-      exact geb,
+      rw nat.pos_iff_ne_zero,
+      rw [<- digits, <- ne_zero_iff_digits_len_ne_zero],
+      linarith [geb],
     },
-    exact npos,
+    rwa nat.pos_iff_ne_zero,
   },
 end
 
-lemma ten_digits_ge_base_pow_len (n : ℕ) : n > 0 → n ≥ 10 ^ ((digits 10 n).length - 1) :=
+lemma ten_digits_ge_base_pow_len (n : ℕ) : n ≠ 0 → n ≥ 10 ^ ((digits 10 n).length - 1) :=
 begin
-  exact digits_ge_base_pow_len,
+  exact digits_ge_base_pow_len 8 n,
 end
 
--- Thanks Grayson Burton for this handy lemma!!
-lemma ex_pred_of_s : ∀ n > 0, ∃ m : ℕ, m.succ = n
-| 0       h := absurd h dec_trivial
-| (n + 1) _ := ⟨n, rfl⟩
-
--- this was used for the disaster lmao
-lemma lt_add_lt_mul (a b c : ℕ) (hb : 1 < b) (hc : 0 < c) : a < c → a + c < b*c :=
+lemma digits_one_less (b m : ℕ) : m > 0 → (digits (b+2) m).length = (digits (b+2) (m/(b+2))).length + 1 :=
 begin
-  intros h,
-  have hbc : 2*c ≤ b*c,
-  induction hb with k hbk,
-  { rw nat.succ_eq_add_one, },
-  { apply le_trans hb_ih,
-    rw nat.succ_mul,
+  intros hm,
+  unfold digits,
+  conv_lhs { rw digits_aux_def (b+2) (by linarith) m hm },
+  rw list.length_cons,
+end
+
+lemma ten_happyfunction_le (n : ℕ) : happyfunction 2 10 n ≤ 81*(digits 10 n).length :=
+begin
+  unfold happyfunction,
+  have hdsq : ∀ dsq ∈ (list.map (λ (d : ℕ), d ^ 2) (digits 10 n)), dsq ≤ 81,
+  intros dsq dsqin,
+  rw list.mem_map at dsqin,
+  cases dsqin with d' hd',
+  cases hd' with dh sqh,
+  have dle := ten_digits_le_9 n d' dh,
+  rw <- sqh,
+  exact nat.pow_le_pow_of_le_left dle 2,
+  have hle := sum_list_le_len_mul_ge (list.map (λ (d : ℕ), d ^ 2) (digits 10 n)) 81 hdsq,
+  rw list.length_map (λ (d : ℕ), d ^ 2) (digits 10 n) at hle,
+  exact hle,
+end
+
+lemma helper_lt (a : ℕ) : 81*(a + 4) < 10^(a + 3) :=
+begin
+  induction a with k ak,
+  { norm_num },
+  { repeat { rw nat.succ_add },
+    rw nat.mul_succ,
+    rw nat.pow_succ,
     linarith,
-  },
-  have hac : a + c < 2*c,
-  linarith,
-  linarith,
-end
-
-lemma digits_lt_base_pow_len {b m : ℕ} : m > 0 → m < (b + 2) ^ ((digits (b + 2) m).length) :=
-begin
-  apply nat.strong_induction_on m,
-  clear m,
-  intros n IH npos,
-  unfold digits at IH ⊢,
-  cases n,
-  { linarith, },
-  { rw [digits_aux_def (b+2) (by linarith) (n.succ), list.length_cons],
-    cases nat.lt_or_ge n.succ (b+2),
-    { rw [nat.pow_add (b+2) (digits_aux (b + 2) _ (n.succ / (b + 2))).length 1, nat.div_eq_of_lt h, <- digits, digits_zero, list.length, nat.pow_zero, nat.one_mul, nat.pow_one],
-      exact h,
-    },
-    { rw ge_iff_le at h,
-      rw le_iff_exists_add at h,
-      cases h with c hc,
-      cases c with d cd,
-      { rw nat.add_zero at hc, 
-        rw hc,
-        rw nat.div_self,
-        unfold digits_aux,
-        rw list.length_cons,
-        rw nat.div_eq_of_lt,
-        unfold digits_aux,
-        rw list.length,
-        rw nat.zero_add,
-        conv_lhs { rw <- nat.pow_one (b+2) },
-        apply nat.pow_lt_pow_succ,
-        repeat { linarith },
-      },
-      { rw nat.add_succ at hc,
-        rw hc at IH,
-        specialize IH (b + 2 + d) (nat.lt_succ_self (b + 2 + d)) (by linarith),
-        sorry
-      },
-    },
-    exact npos,
   },
 end
 
 -- happy function on a 4 or more digit number will result in a smaller number
-lemma ten_happyfunction_lt_four_digits (n : ℕ) (R = (digits 10 n).length): (R ≥ 4) → happyfunction 2 10 n < n :=
+lemma ten_happyfunction_lt_four_digits (n : ℕ) : 4 ≤ (digits 10 n).length → happyfunction 2 10 n < n :=
 begin
-  intros hR,
-  induction hR with k nk IH,
-  { have h₁ : happyfunction 2 10 n ≤ 81*4,
-    unfold happyfunction,
-    have h₂ : ∀ dsq ∈ (list.map (λ (d : ℕ), d ^ 2) (digits 10 n)), dsq ≤ 81,
-    intros dsq dsqh,
-    simp at dsqh,
-    cases dsqh with d' d'sqh,
-    cases d'sqh with dh sqh,
-    have h₃ := ten_digits_le_9 n d' dh,
-    rw <- sqh,
-    exact nat.pow_le_pow_of_le_left h₃ 2,
-    have h₄ := sum_list_le_len_mul_ge (list.map (λ (d : ℕ), d ^ 2) (digits 10 n)) 81 h₂,
-    rw list.length_map (λ (d : ℕ), d ^ 2) (digits 10 n) at h₄,
-    rw H,
-    exact h₄,
-    have h₅ : 81 * 4 < n,
-    have npos : 0 < n,
-    rw [nonzero_iff_digits_len_nonzero, <- H],
-    linarith,
-    have h₇ := ten_digits_ge_base_pow_len n npos,
-    rw <- H at h₇,
-    calc (81*4) < (10^(4-1)) : by norm_num
-         ... ≤ n : h₇,
-    linarith,
-  },
-  { sorry
-  },
+  intros hdig,
+  have npos : n ≠ 0,
+  rw ne_zero_iff_digits_len_ne_zero 10,
+  linarith,
+  have hge := digits_ge_base_pow_len 8 n npos,
+  norm_num at hge,
+  have hle := ten_happyfunction_le n,
+  set R := (digits 10 n).length with ←h,
+  suffices : 81*R < 10^(R-1),
+  { linarith },
+  rw le_iff_exists_add at hdig,
+  cases hdig with c hc,
+  rw hc,
+  norm_num,
+  rw [add_comm 4 c, add_comm 3 c],
+  exact helper_lt c,
 end
 
 def K : set ℕ := {4, 16, 37, 58, 89, 145, 42, 20}
@@ -632,12 +525,12 @@ def K : set ℕ := {4, 16, 37, 58, 89, 145, 42, 20}
 lemma K_closed_under_happyfunction (n : ℕ) (H : n ∈ K) : happyfunction 2 10 n ∈ K :=
 begin
   iterate 7 {
-  cases H,
-  rw H,
-  unfold happyfunction,
-  norm_num,
-  right,
-  simp,},
+    cases H,
+    rw H,
+    unfold happyfunction,
+    norm_num,
+    right,
+    simp,},
   have H' := set.eq_of_mem_singleton H,
   rw H',
   unfold happyfunction,
@@ -675,7 +568,7 @@ end
 end mainTheorem
 
 #print happyfunction
-#eval happyfunction 2 10 8
+#eval happyfunction 2 10 999
 
 #print happyfunction'
 #eval happyfunction' 2 10 7 5

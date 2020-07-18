@@ -1,8 +1,8 @@
 [package]
 name = "playing_with_numbers"
 version = "0.1"
-lean_version = "leanprover-community/lean:3.16.4"
+lean_version = "leanprover-community/lean:3.17.1"
 path = "src"
 
 [dependencies]
-mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "985cce7b7a3970a65e3344f2dc5b984a8c154457"}
+mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "f1b687cdf7b6bb62e215d367754994e539dae0b2"}

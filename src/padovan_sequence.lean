@@ -1,5 +1,5 @@
 import data.stream.basic
-import tactic.norm_num
+import tactic
 
 namespace padovan
 
@@ -26,11 +26,24 @@ begin
   simp only [padovan, padovan_aux_stream_succ, padovan_aux_step],
 end
 
+lemma padovan_increasing (n m : ℕ): n ≤ m → padovan n ≤ padovan m :=
+begin
+  intros h,
+  sorry
+end
+
 lemma padovan_pos (n : ℕ) : 0 < padovan n :=
 begin
   induction n with k nk,
-  norm_num,
-  sorry
+  { rw padovan_zero,
+    linarith,
+  },
+  { cases k,
+    { rw padovan_one,
+      linarith,
+    },
+    { sorry },
+  },
 end
 
 end padovan
