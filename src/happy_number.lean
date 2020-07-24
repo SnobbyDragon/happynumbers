@@ -412,6 +412,7 @@ begin
   rw list.length_cons,
 end
 
+-- happyfunction n is less than 81*(number of digits in n)
 lemma ten_happyfunction_le (n : ℕ) : happyfunction 2 10 n ≤ 81*(digits 10 n).length :=
 begin
   unfold happyfunction,
@@ -440,7 +441,7 @@ begin
 end
 
 -- happy function on a 4 or more digit number will result in a smaller number
-lemma ten_happyfunction_lt_four_digits (n : ℕ) : 4 ≤ (digits 10 n).length → happyfunction 2 10 n < n :=
+lemma ge_four_digits_dec (n : ℕ) : 4 ≤ (digits 10 n).length → happyfunction 2 10 n < n :=
 begin
   intros hdig,
   have npos : n ≠ 0,
@@ -458,6 +459,25 @@ begin
   norm_num,
   rw [add_comm 4 c, add_comm 3 c],
   exact helper_lt c,
+end
+
+lemma ge_four_digits_le_digits_len (n : ℕ) : 4 ≤ (digits 10 n).length → (digits 10 (happyfunction 2 10 n)).length ≤ (digits 10 n).length :=
+begin
+  intros h,
+  have dec := ge_four_digits_dec n h,
+  exact le_digits_len_le 10 (happyfunction 2 10 n) n (by linarith [dec]),
+end
+
+-- eventually, happyfunction on n is less than 4 digits long
+lemma eventually_lt_four_digits (n : ℕ) : ∃ (a : ℕ), (digits 10 (happyfunction' 2 10 n a)).length < 4 :=
+begin
+  sorry
+end
+
+-- eventually, happyfunction on n is less than or equal to 162
+lemma eventually_le (n : ℕ) : ∃ (a : ℕ), happyfunction' 2 10 n a ≤ 162 :=
+begin
+  sorry
 end
 
 def K : set ℕ := {4, 16, 37, 58, 89, 145, 42, 20}
