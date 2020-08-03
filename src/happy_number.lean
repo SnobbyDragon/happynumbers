@@ -22,7 +22,7 @@ def happyfunction' (p : ℕ) (b : ℕ) (n : ℕ) : ℕ → ℕ
 def happy (b : ℕ) (n : ℕ) : Prop := ∃ (j : ℕ), happyfunction' 2 b n j = 1
 
 -- height of a b-happy number n is the number of iterations of the happy function to reach 1
-def happyheight (b : ℕ) (n : ℕ) (H : happy b n) : ℕ := sorry
+def happyheight (b n i : ℕ) (H : happyfunction' 2 b n i ≠ 1 ∧ happyfunction' 2 b n i.succ = 1) : ℕ := i.succ
 
 --Sad number
 -- a number n is b-sad iff all iterations of the happy function on n w/base b, power 2 are not equal to 1
@@ -461,6 +461,7 @@ begin
   exact helper_lt c,
 end
 
+-- happy function on a 4 or more digit number will never increase the number of digits
 lemma ge_four_digits_le_digits_len (n : ℕ) : 4 ≤ (digits 10 n).length → (digits 10 (happyfunction 2 10 n)).length ≤ (digits 10 n).length :=
 begin
   intros h,
@@ -490,7 +491,7 @@ begin
     unfold happyfunction,
     norm_num,
     right,
-    simp,},
+    simp },
   have H' := set.eq_of_mem_singleton H,
   rw H',
   unfold happyfunction,
